@@ -47,7 +47,7 @@ A distributed Agent-to-Agent (A2A) communication system built with **Mastra** an
 ```
 mastra-a2a/
 ├── gateway-agent/          # Express.js server with A2A client
-├── mastra-a2a-demo/        # Research Agent (Port 4111)
+├── research-agent/         # Research Agent (Port 4111)
 ├── writing-agent/          # Writing Agent (Port 4112)
 ├── analysis-agent/         # Analysis Agent (Port 4113)
 ├── a2a-frontend/           # Next.js frontend (Port 3000)
@@ -74,7 +74,7 @@ cd mastra-a2a-distributed-system
 Create `.env` files in each agent directory:
 
 ```bash
-# In each agent directory (mastra-a2a-demo, writing-agent, analysis-agent)
+# In each agent directory (research-agent, writing-agent, analysis-agent)
 echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
 echo "PORT=4111" >> .env  # Use 4111, 4112, 4113 respectively
 ```
@@ -83,7 +83,7 @@ echo "PORT=4111" >> .env  # Use 4111, 4112, 4113 respectively
 
 ```bash
 # Install dependencies for all agents
-cd mastra-a2a-demo && npm install && cd ..
+cd research-agent && npm install && cd ..
 cd writing-agent && npm install && cd ..
 cd analysis-agent && npm install && cd ..
 cd gateway-agent && npm install && cd ..
@@ -96,7 +96,8 @@ Open 5 terminal windows and run:
 
 ```bash
 # Terminal 1: Research Agent
-cd mastra-a2a-demo && npm run dev
+cd research-agent && npm run dev
+```
 
 # Terminal 2: Writing Agent
 cd writing-agent && npm run dev
