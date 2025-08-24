@@ -42,10 +42,10 @@ This project aims to demonstrate and advance:
    # Create .env files in each agent directory
    echo "OPENAI_API_KEY=your_api_key_here" > research-agent/.env
    echo "PORT=4111" >> research-agent/.env
-   
+
    echo "OPENAI_API_KEY=your_api_key_here" > writing-agent/.env
    echo "PORT=4112" >> writing-agent/.env
-   
+
    echo "OPENAI_API_KEY=your_api_key_here" > analysis-agent/.env
    echo "PORT=4113" >> analysis-agent/.env
    ```

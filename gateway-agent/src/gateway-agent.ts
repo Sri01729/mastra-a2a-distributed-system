@@ -48,6 +48,23 @@ const a2aClients = {
   analysis: mastraClients.analysis.getA2A(AGENT_IDS.analysis)
 };
 
+// Helper function to create a proper Message object for A2A
+function createMessage(content: string, from: string = 'gateway-agent') {
+  return {
+    kind: 'message' as const,
+    messageId: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    parts: [
+      {
+        kind: 'text' as const,
+        text: content
+      }
+    ],
+    metadata: {
+      from: from
+    }
+  };
+}
+
 class GatewayAgent {
   private app: express.Application;
   private port: number;
@@ -157,8 +174,7 @@ class GatewayAgent {
 
     try {
       const result = await a2aClients[serverName as keyof typeof a2aClients].sendMessage({
-        content: message,
-        from: 'gateway-agent'
+        message: createMessage(message, 'gateway-agent')
       });
 
       return {
@@ -188,38 +204,32 @@ class GatewayAgent {
     try {
       console.log('📚 Step 1: Sending research message via Mastra A2A...');
       const researchResponse = await a2aClients.research.sendMessage({
-        content: `Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`,
-        from: 'gateway-agent'
+        message: createMessage(`Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`, 'gateway-agent')
       });
 
       console.log('📊 Step 2: Sending analysis message via Mastra A2A...');
       const analysisResponse = await a2aClients.analysis.sendMessage({
-        content: `Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`,
-        from: 'gateway-agent'
+        message: createMessage(`Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`, 'gateway-agent')
       });
 
       console.log('✍️ Step 3: Sending writing message via Mastra A2A...');
       const writingResponse = await a2aClients.writing.sendMessage({
-        content: `Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`,
-        from: 'gateway-agent'
+        message: createMessage(`Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`, 'gateway-agent')
       });
 
       console.log('📡 Step 4: Setting up streaming message streams...');
 
       // Set up streaming for real-time updates
       const researchStream = a2aClients.research.sendStreamingMessage({
-        content: `Stream research updates for: ${topic}`,
-        from: 'gateway-agent'
+        message: createMessage(`Stream research updates for: ${topic}`, 'gateway-agent')
       });
 
       const analysisStream = a2aClients.analysis.sendStreamingMessage({
-        content: `Stream analysis updates for: ${topic}`,
-        from: 'gateway-agent'
+        message: createMessage(`Stream analysis updates for: ${topic}`, 'gateway-agent')
       });
 
       const writingStream = a2aClients.writing.sendStreamingMessage({
-        content: `Stream writing updates for: ${topic}`,
-        from: 'gateway-agent'
+        message: createMessage(`Stream writing updates for: ${topic}`, 'gateway-agent')
       });
 
       return {
