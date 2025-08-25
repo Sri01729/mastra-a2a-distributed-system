@@ -5,7 +5,7 @@ import { researchAgent } from './src/mastra/agents/research-agent';
 
 /**
  * Mastra Cloud Configuration - Research Agent
- * 
+ *
  * This configuration is optimized for Mastra Cloud deployment:
  * - Uses LibSQLStore for cloud storage
  * - Enables A2A communication
@@ -33,20 +33,20 @@ export const mastra = new Mastra({
 
 /**
  * Mastra Cloud Deployment Notes:
- * 
+ *
  * 1. **Automatic Deployment**: This agent will be deployed to Mastra Cloud
  *    and get a unique URL like: https://your-research-agent.mastra.ai
- * 
+ *
  * 2. **A2A Endpoints**: Mastra Cloud automatically exposes:
  *    - GET /api/agents/researchAgent - Get agent details
  *    - POST /api/agents/researchAgent/generate - Send messages to agent
  *    - GET /api/agents - List all agents
- * 
+ *
  * 3. **Agent Discovery**: Other agents can discover this agent using:
  *    - Agent ID: 'researchAgent'
  *    - Capabilities: research, information gathering, analysis
- * 
- * 4. **Cloud Features**: 
+ *
+ * 4. **Cloud Features**:
  *    - Automatic scaling
  *    - Built-in monitoring and logging
  *    - Playground for testing
