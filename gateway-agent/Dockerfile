@@ -25,7 +25,7 @@ RUN npm ci --only=production
 EXPOSE 3001
 
 # Health check with increased start period and interval
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=5 \
   CMD curl -f http://localhost:3001/health || exit 1
 
 # Start the application

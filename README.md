@@ -15,17 +15,17 @@ A distributed agent-to-agent (A2A) communication system built with Mastra, featu
 ### Backend Agents (AWS + Defang)
 
 1. **Setup AWS Infrastructure:**
-   ```bash
+```bash
    ./scripts/setup-aws.sh
-   ```
+```
 
 2. **Deploy All Agents:**
-   ```bash
+```bash
    ./scripts/deploy-aws-defang.sh
-   ```
+```
 
 3. **Deploy Individual Agents:**
-   ```bash
+```bash
    ./scripts/deploy-individual-aws.sh gateway
    ./scripts/deploy-individual-aws.sh research
    ./scripts/deploy-individual-aws.sh writing
@@ -35,7 +35,7 @@ A distributed agent-to-agent (A2A) communication system built with Mastra, featu
 ### Frontend (Vercel)
 
 1. **Deploy Frontend:**
-   ```bash
+```bash
    ./scripts/deploy-frontend.sh
    ```
 
