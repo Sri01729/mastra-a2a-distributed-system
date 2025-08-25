@@ -23,9 +23,9 @@ import { MastraClient } from '@mastra/client-js';
 
 // Agent Server Configuration
 const AGENT_SERVERS = {
-  research: 'http://localhost:4111',
-  writing: 'http://localhost:4112',
-  analysis: 'http://localhost:4113'
+  research: process.env.RESEARCH_AGENT_URL || 'http://localhost:4111',
+  writing: process.env.WRITING_AGENT_URL || 'http://localhost:4112',
+  analysis: process.env.ANALYSIS_AGENT_URL || 'http://localhost:4113'
 };
 
 // Agent IDs for A2A communication (Using export names)

@@ -1,11 +1,12 @@
 {
   "name": "gateway-agent",
   "version": "1.0.0",
-  "main": "src/gateway-agent.ts",
+  "main": "dist/gateway-agent.js",
   "type": "module",
   "scripts": {
     "dev": "tsx src/gateway-agent.ts",
-    "start": "tsx src/gateway-agent.ts",
+    "start": "node dist/gateway-agent.js",
+    "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
