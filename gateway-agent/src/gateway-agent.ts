@@ -21,11 +21,11 @@ import { MastraClient } from '@mastra/client-js';
  * - Analysis Agent (Port 4113) - Mastra Dev Server with A2A capabilities
  */
 
-// Agent Server Configuration
+// Agent Server Configuration - Mastra Cloud URLs
 const AGENT_SERVERS = {
-  research: process.env.RESEARCH_AGENT_URL || 'http://localhost:4111',
-  writing: process.env.WRITING_AGENT_URL || 'http://localhost:4112',
-  analysis: process.env.ANALYSIS_AGENT_URL || 'http://localhost:4113'
+  research: process.env.RESEARCH_AGENT_URL || 'https://your-research-agent.mastra.ai',
+  writing: process.env.WRITING_AGENT_URL || 'https://your-writing-agent.mastra.ai',
+  analysis: process.env.ANALYSIS_AGENT_URL || 'https://your-analysis-agent.mastra.ai'
 };
 
 // Agent IDs for A2A communication (Using export names)
@@ -35,18 +35,18 @@ const AGENT_IDS = {
   analysis: 'analysisAgent'
 };
 
-// Initialize Mastra A2A clients for each agent server
+// Initialize Mastra clients for each agent server
 const mastraClients = {
   research: new MastraClient({ baseUrl: AGENT_SERVERS.research }),
   writing: new MastraClient({ baseUrl: AGENT_SERVERS.writing }),
   analysis: new MastraClient({ baseUrl: AGENT_SERVERS.analysis })
 };
 
-// Get A2A instances for each agent
-const a2aClients = {
-  research: mastraClients.research.getA2A(AGENT_IDS.research),
-  writing: mastraClients.writing.getA2A(AGENT_IDS.writing),
-  analysis: mastraClients.analysis.getA2A(AGENT_IDS.analysis)
+// Get agent instances for each deployed agent
+const agentClients = {
+  research: mastraClients.research.getAgent(AGENT_IDS.research),
+  writing: mastraClients.writing.getAgent(AGENT_IDS.writing),
+  analysis: mastraClients.analysis.getAgent(AGENT_IDS.analysis)
 };
 
 // Helper function to create a proper Message object for A2A
@@ -154,31 +154,27 @@ class GatewayAgent {
 
     for (const [serverName, serverUrl] of Object.entries(AGENT_SERVERS)) {
       try {
-        // Try A2A protocol first (getCard)
+        // Get agent details using Mastra Client
         const agentName = AGENT_IDS[serverName as keyof typeof AGENT_IDS];
-        const a2aClient = mastraClients[serverName as keyof typeof mastraClients].getA2A(agentName);
+        const agentClient = agentClients[serverName as keyof typeof agentClients];
 
         try {
-          const agentCard = await a2aClient.getCard();
+          const agentDetails = await agentClient.details();
           discoveredAgents.push({
             server: serverName,
             url: serverUrl,
-            agent: agentCard,
+            agent: agentDetails,
             status: 'online',
-            protocol: 'Mastra A2A Protocol v0.3.0'
+            protocol: 'Mastra Cloud Agent API'
           });
-        } catch (a2aError: any) {
-          // Fallback to direct HTTP if A2A fails
-          console.warn(`A2A discovery failed for ${serverName}, trying HTTP fallback:`, a2aError.message);
-          const response = await axios.get(`${serverUrl}/api/agents/${agentName}`);
-          const agentCard = response.data;
-
+        } catch (agentError: any) {
+          console.warn(`Agent discovery failed for ${serverName}:`, agentError.message);
           discoveredAgents.push({
             server: serverName,
             url: serverUrl,
-            agent: agentCard,
-            status: 'online',
-            protocol: 'Mastra Agent API (A2A Ready)'
+            status: 'offline',
+            error: agentError.message,
+            protocol: 'Mastra Cloud Agent API'
           });
         }
       } catch (error: any) {
@@ -188,7 +184,7 @@ class GatewayAgent {
           url: serverUrl,
           status: 'offline',
           error: error.message,
-          protocol: 'Mastra A2A Protocol v0.3.0'
+          protocol: 'Mastra Cloud Agent API'
         });
       }
     }
@@ -203,16 +199,22 @@ class GatewayAgent {
     }
 
     try {
-      const result = await a2aClients[serverName as keyof typeof a2aClients].sendMessage({
-        message: createMessage(message, 'gateway-agent')
+      const agentClient = agentClients[serverName as keyof typeof agentClients];
+      const result = await agentClient.generate({
+        messages: [
+          {
+            role: "user",
+            content: message,
+          },
+        ],
       });
 
       return {
         success: true,
-        message: `Message sent to ${agentId} using Mastra A2A`,
+        message: `Message sent to ${agentId} using Mastra Cloud API`,
         result,
         timestamp: new Date().toISOString(),
-        protocol: 'Mastra Native A2A v0.3.0'
+        protocol: 'Mastra Cloud Agent API'
       };
     } catch (error: any) {
       throw new Error(`Failed to send message to ${agentId}: ${error.message}`);
@@ -229,25 +231,40 @@ class GatewayAgent {
   }
 
     private async executeResearchAnalysisWriteWorkflowWithMastraA2A(topic: string, targetAudience: string) {
-    console.log(`🚀 Starting Mastra A2A workflow: ${topic} for ${targetAudience}`);
+    console.log(`🚀 Starting Mastra Cloud workflow: ${topic} for ${targetAudience}`);
 
     try {
-      console.log('📚 Step 1: Sending research message via Mastra A2A...');
-      const researchResponse = await a2aClients.research.sendMessage({
-        message: createMessage(`Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`, 'gateway-agent')
+      console.log('📚 Step 1: Sending research message via Mastra Cloud...');
+      const researchResponse = await agentClients.research.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`,
+          },
+        ],
       });
 
-      console.log('📊 Step 2: Sending analysis message via Mastra A2A...');
-      const analysisResponse = await a2aClients.analysis.sendMessage({
-        message: createMessage(`Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`, 'gateway-agent')
+      console.log('📊 Step 2: Sending analysis message via Mastra Cloud...');
+      const analysisResponse = await agentClients.analysis.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`,
+          },
+        ],
       });
 
-      console.log('✍️ Step 3: Sending writing message via Mastra A2A...');
-      const writingResponse = await a2aClients.writing.sendMessage({
-        message: createMessage(`Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`, 'gateway-agent')
+      console.log('✍️ Step 3: Sending writing message via Mastra Cloud...');
+      const writingResponse = await agentClients.writing.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`,
+          },
+        ],
       });
 
-      console.log('✅ All messages sent successfully via A2A protocol');
+      console.log('✅ All messages sent successfully via Mastra Cloud API');
 
       return {
         workflow: 'research-analysis-write',
@@ -259,9 +276,8 @@ class GatewayAgent {
           writing: writingResponse
         },
         timestamp: new Date().toISOString(),
-        protocol: 'Mastra Native A2A v0.3.0',
-        changelog: 'https://mastra.ai/blog/changelog-2025-05-15',
-        note: 'Using reliable message exchange without streaming to avoid JSON parsing issues'
+        protocol: 'Mastra Cloud Agent API',
+        note: 'Using Mastra Cloud API for agent communication'
       };
     } catch (error: any) {
       console.error('❌ Workflow execution failed:', error);
@@ -270,22 +286,37 @@ class GatewayAgent {
   }
 
   private async executeSimpleWorkflow(topic: string, targetAudience: string) {
-    console.log(`🚀 Starting Simple Mastra A2A workflow: ${topic} for ${targetAudience}`);
+    console.log(`🚀 Starting Simple Mastra Cloud workflow: ${topic} for ${targetAudience}`);
 
     try {
-      console.log('📚 Step 1: Sending research message via Mastra A2A...');
-      const researchResponse = await a2aClients.research.sendMessage({
-        message: createMessage(`Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`, 'gateway-agent')
+      console.log('📚 Step 1: Sending research message via Mastra Cloud...');
+      const researchResponse = await agentClients.research.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please research the topic: ${topic}. Provide comprehensive findings with sources and insights.`,
+          },
+        ],
       });
 
-      console.log('📊 Step 2: Sending analysis message via Mastra A2A...');
-      const analysisResponse = await a2aClients.analysis.sendMessage({
-        message: createMessage(`Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`, 'gateway-agent')
+      console.log('📊 Step 2: Sending analysis message via Mastra Cloud...');
+      const analysisResponse = await agentClients.analysis.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please analyze the research findings for topic: ${topic}. Target audience: ${targetAudience}.`,
+          },
+        ],
       });
 
-      console.log('✍️ Step 3: Sending writing message via Mastra A2A...');
-      const writingResponse = await a2aClients.writing.sendMessage({
-        message: createMessage(`Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`, 'gateway-agent')
+      console.log('✍️ Step 3: Sending writing message via Mastra Cloud...');
+      const writingResponse = await agentClients.writing.generate({
+        messages: [
+          {
+            role: "user",
+            content: `Please create content for topic: ${topic}. Target audience: ${targetAudience}. Content type: report.`,
+          },
+        ],
       });
 
       return {
@@ -298,8 +329,8 @@ class GatewayAgent {
           writing: writingResponse
         },
         timestamp: new Date().toISOString(),
-        protocol: 'Mastra Native A2A v0.3.0',
-        note: 'Simple workflow without streaming to avoid JSON parsing issues'
+        protocol: 'Mastra Cloud Agent API',
+        note: 'Simple workflow using Mastra Cloud API'
       };
     } catch (error: any) {
       console.error('❌ Simple workflow execution failed:', error);
@@ -308,37 +339,36 @@ class GatewayAgent {
   }
 
   private async testMastraA2ACommunication() {
-    console.log('🧪 Testing Mastra A2A communication...');
+    console.log('🧪 Testing Mastra Cloud communication...');
 
     const tests: any[] = [];
 
     try {
-      const agentCard = await a2aClients.research.getCard();
-      tests.push({ agent: 'research', status: 'success', agentCard, protocol: 'Mastra Native A2A v0.3.0' });
+      const agentDetails = await agentClients.research.details();
+      tests.push({ agent: 'research', status: 'success', agentDetails, protocol: 'Mastra Cloud Agent API' });
     } catch (error: any) {
-      tests.push({ agent: 'research', status: 'failed', error: error.message, protocol: 'Mastra Native A2A v0.3.0' });
+      tests.push({ agent: 'research', status: 'failed', error: error.message, protocol: 'Mastra Cloud Agent API' });
     }
 
     try {
-      const agentCard = await a2aClients.analysis.getCard();
-      tests.push({ agent: 'analysis', status: 'success', agentCard, protocol: 'Mastra Native A2A v0.3.0' });
+      const agentDetails = await agentClients.analysis.details();
+      tests.push({ agent: 'analysis', status: 'success', agentDetails, protocol: 'Mastra Cloud Agent API' });
     } catch (error: any) {
-      tests.push({ agent: 'analysis', status: 'failed', error: error.message, protocol: 'Mastra Native A2A v0.3.0' });
+      tests.push({ agent: 'analysis', status: 'failed', error: error.message, protocol: 'Mastra Cloud Agent API' });
     }
 
     try {
-      const agentCard = await a2aClients.writing.getCard();
-      tests.push({ agent: 'writing', status: 'success', agentCard, protocol: 'Mastra Native A2A v0.3.0' });
+      const agentDetails = await agentClients.writing.details();
+      tests.push({ agent: 'writing', status: 'success', agentDetails, protocol: 'Mastra Cloud Agent API' });
     } catch (error: any) {
-      tests.push({ agent: 'writing', status: 'failed', error: error.message, protocol: 'Mastra Native A2A v0.3.0' });
+      tests.push({ agent: 'writing', status: 'failed', error: error.message, protocol: 'Mastra Cloud Agent API' });
     }
 
     return {
-      test: 'mastra-a2a-communication',
+      test: 'mastra-cloud-communication',
       timestamp: new Date().toISOString(),
       results: tests,
-      protocol: 'Mastra Native A2A v0.3.0',
-      changelog: 'https://mastra.ai/blog/changelog-2025-05-15'
+      protocol: 'Mastra Cloud Agent API'
     };
   }
 
@@ -350,11 +380,10 @@ class GatewayAgent {
       console.log(`💬 Send message: POST http://localhost:${this.port}/api/agents/{agentId}/message`);
       console.log(`🔄 Workflow: POST http://localhost:${this.port}/api/workflow/research-analysis-write`);
       console.log(`🔄 Simple Workflow: POST http://localhost:${this.port}/api/workflow/simple`);
-      console.log(`📝 Note: Workflows use reliable message exchange (no streaming)`);
-      console.log(`🧪 A2A Test: POST http://localhost:${this.port}/api/test/a2a-communication`);
-      console.log(`🔗 Using Mastra's Native A2A Protocol v0.3.0 for agent communication`);
-      console.log(`📖 Based on Mastra changelog: https://mastra.ai/blog/changelog-2025-05-15`);
-      console.log(`✅ Real A2A client implementation - no more simulation!`);
+      console.log(`📝 Note: Workflows use Mastra Cloud API for agent communication`);
+      console.log(`🧪 Cloud Test: POST http://localhost:${this.port}/api/test/a2a-communication`);
+      console.log(`🔗 Using Mastra Cloud Agent API for distributed agent communication`);
+      console.log(`✅ Gateway agent ready to coordinate distributed agents on Mastra Cloud!`);
     });
   }
 }
