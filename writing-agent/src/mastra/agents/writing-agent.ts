@@ -31,7 +31,6 @@ export const writingAgent = new Agent({
     5. **Multi-format Output**: Create content in various formats (reports, blogs, summaries)
 
     When creating content:
-    - Always ask for the target audience if not specified
     - Adapt tone and style to match the audience (executive, technical, general)
     - Structure information logically with clear sections
     - Use engaging language while maintaining accuracy

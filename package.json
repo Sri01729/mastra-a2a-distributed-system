@@ -1,0 +1,46 @@
+{
+  "name": "mastra-a2a-distributed-system",
+  "version": "1.0.0",
+  "description": "Distributed A2A (Agent-to-Agent) communication system using Mastra's native A2A protocol",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:research\" \"npm run dev:writing\" \"npm run dev:analysis\" \"npm run dev:gateway\" \"npm run dev:frontend\"",
+    "dev:research": "cd research-agent && PORT=4111 npm run dev",
+    "dev:writing": "cd writing-agent && PORT=4112 npm run dev",
+    "dev:analysis": "cd analysis-agent && PORT=4113 npm run dev",
+    "dev:gateway": "cd gateway-agent && npm run dev",
+    "dev:frontend": "cd a2a-frontend && npm run dev",
+    "start": "npm run dev",
+    "install:all": "npm install && cd research-agent && npm install && cd ../writing-agent && npm install && cd ../analysis-agent && npm install && cd ../gateway-agent && npm install && cd ../a2a-frontend && npm install",
+    "clean": "rm -rf node_modules && cd research-agent && rm -rf node_modules && cd ../writing-agent && rm -rf node_modules && cd ../analysis-agent && rm -rf node_modules && cd ../gateway-agent && rm -rf node_modules && cd ../a2a-frontend && rm -rf node_modules",
+    "test": "echo \"Testing A2A system...\" && curl -s http://localhost:3001/health | jq . || echo \"Gateway not running\"",
+    "status": "echo \"Checking server status...\" && lsof -i :3000,3001,4111,4112,4113 || echo \"No servers running\""
+  },
+  "keywords": [
+    "a2a",
+    "agent-to-agent",
+    "mastra",
+    "distributed",
+    "ai",
+    "agents",
+    "communication",
+    "protocol"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/mastra-a2a"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/mastra-a2a/issues"
+  },
+  "homepage": "https://github.com/your-username/mastra-a2a#readme"
+}

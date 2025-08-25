@@ -32,6 +32,7 @@ A distributed Agent-to-Agent (A2A) communication system built with **Mastra** an
 - **Workflow Orchestration**: Complete Research → Analysis → Writing pipeline
 - **Modern Frontend**: Next.js with real-time agent monitoring
 - **Protocol Compliance**: Follows Google's A2A v0.3.0 specification
+- **Development Convenience**: Root package.json for easy management
 
 ## 🛠️ Technology Stack
 
@@ -40,18 +41,19 @@ A distributed Agent-to-Agent (A2A) communication system built with **Mastra** an
 - **Communication**: Google A2A Protocol v0.3.0, Server-Sent Events
 - **Database**: LibSQL (file-based storage)
 - **Language Models**: OpenAI GPT-4o-mini
-- **Development**: TSX, Node.js
+- **Development**: TSX, Node.js, Concurrently
 
 ## 📦 Project Structure
 
 ```
 mastra-a2a/
-├── gateway-agent/          # Express.js server with A2A client
-├── research-agent/         # Research Agent (Port 4111)
-├── writing-agent/          # Writing Agent (Port 4112)
-├── analysis-agent/         # Analysis Agent (Port 4113)
-├── a2a-frontend/           # Next.js frontend (Port 3000)
-└── docs.md                 # Comprehensive documentation
+├── package.json              # Root package.json for development convenience
+├── gateway-agent/            # Express.js server with A2A client
+├── research-agent/           # Research Agent (Port 4111)
+├── writing-agent/            # Writing Agent (Port 4112)
+├── analysis-agent/           # Analysis Agent (Port 4113)
+├── a2a-frontend/             # Next.js frontend (Port 3000)
+└── docs.md                   # Comprehensive documentation
 ```
 
 ## 🚀 Quick Start
@@ -76,40 +78,29 @@ Create `.env` files in each agent directory:
 ```bash
 # In each agent directory (research-agent, writing-agent, analysis-agent)
 echo "OPENAI_API_KEY=your_openai_api_key_here" > .env
-echo "PORT=4111" >> .env  # Use 4111, 4112, 4113 respectively
 ```
 
 ### 3. Install Dependencies
 
 ```bash
-# Install dependencies for all agents
-cd research-agent && npm install && cd ..
-cd writing-agent && npm install && cd ..
-cd analysis-agent && npm install && cd ..
-cd gateway-agent && npm install && cd ..
-cd a2a-frontend && npm install && cd ..
+# Install all dependencies with one command
+npm run install:all
 ```
 
 ### 4. Start the System
 
-Open 5 terminal windows and run:
-
+**Option 1: Start All Servers at Once (Recommended)**
 ```bash
-# Terminal 1: Research Agent
-cd research-agent && npm run dev
+npm run dev
 ```
 
-# Terminal 2: Writing Agent
-cd writing-agent && npm run dev
-
-# Terminal 3: Analysis Agent
-cd analysis-agent && npm run dev
-
-# Terminal 4: Gateway Agent
-cd gateway-agent && npm run dev
-
-# Terminal 5: Frontend
-cd a2a-frontend && npm run dev
+**Option 2: Start Individual Servers**
+```bash
+npm run dev:research    # Research Agent (Port 4111)
+npm run dev:writing     # Writing Agent (Port 4112)
+npm run dev:analysis    # Analysis Agent (Port 4113)
+npm run dev:gateway     # Gateway Agent (Port 3001)
+npm run dev:frontend    # Frontend (Port 3000)
 ```
 
 ### 5. Access the System
@@ -119,6 +110,35 @@ cd a2a-frontend && npm run dev
 - **Research Agent**: http://localhost:4111
 - **Writing Agent**: http://localhost:4112
 - **Analysis Agent**: http://localhost:4113
+
+## 📋 Root Package.json Commands
+
+The root `package.json` provides convenient commands for managing the distributed system:
+
+### Development Commands
+```bash
+npm run dev                    # Start all servers concurrently
+npm run dev:research           # Start Research Agent only
+npm run dev:writing            # Start Writing Agent only
+npm run dev:analysis           # Start Analysis Agent only
+npm run dev:gateway            # Start Gateway Agent only
+npm run dev:frontend           # Start Frontend only
+```
+
+### Utility Commands
+```bash
+npm run install:all            # Install dependencies for all projects
+npm run clean                  # Remove all node_modules
+npm run test                   # Test if Gateway is running
+npm run status                 # Check which servers are running
+```
+
+### Why Root Package.json?
+
+- **Development Convenience**: Start entire distributed system with one command
+- **True Distribution**: Each agent remains independent for production deployment
+- **Team Collaboration**: Standardized workflows for all developers
+- **CI/CD Ready**: Easy integration with build systems
 
 ## 🔧 API Endpoints
 
@@ -140,7 +160,7 @@ curl http://localhost:3001/health
 curl http://localhost:3001/api/agents
 
 # Send message to research agent
-curl -X POST http://localhost:3001/api/agents/research-agent/message \
+curl -X POST http://localhost:3001/api/agents/researchAgent/message \
   -H "Content-Type: application/json" \
   -d '{"message": "Research AI trends"}'
 
@@ -164,22 +184,23 @@ const mastraClients = {
   analysis: new MastraClient({ baseUrl: 'http://localhost:4113' })
 };
 
-// Get A2A instances for each agent
+// Get A2A instances for each agent (using export names)
 const a2aClients = {
-  research: mastraClients.research.getA2A('research-agent'),
-  writing: mastraClients.writing.getA2A('writing-agent'),
-  analysis: mastraClients.analysis.getA2A('analysis-agent')
+  research: mastraClients.research.getA2A('researchAgent'),
+  writing: mastraClients.writing.getA2A('writingAgent'),
+  analysis: mastraClients.analysis.getA2A('analysisAgent')
 };
 
 // A2A Operations
 const agentCard = await a2aClients.research.getCard();
 const response = await a2aClients.research.sendMessage({
-  content: 'Research topic: AI trends',
-  from: 'gateway-agent'
-});
-const stream = a2aClients.research.sendStreamingMessage({
-  content: 'Stream research updates',
-  from: 'gateway-agent'
+  message: {
+    kind: 'message',
+    messageId: 'msg-123',
+    role: 'user',
+    parts: [{ kind: 'text', text: 'Research AI trends' }],
+    metadata: { from: 'gateway-agent' }
+  }
 });
 ```
 
@@ -191,20 +212,17 @@ The system supports complete workflows:
 async function executeResearchAnalysisWriteWorkflow(topic: string, targetAudience: string) {
   // Step 1: Research
   const researchResponse = await a2aClients.research.sendMessage({
-    content: `Research topic: ${topic}`,
-    from: 'gateway-agent'
+    message: createMessage(`Research topic: ${topic}`, 'gateway-agent')
   });
 
   // Step 2: Analysis
   const analysisResponse = await a2aClients.analysis.sendMessage({
-    content: `Analyze findings for: ${topic}`,
-    from: 'gateway-agent'
+    message: createMessage(`Analyze findings for: ${topic}`, 'gateway-agent')
   });
 
   // Step 3: Writing
   const writingResponse = await a2aClients.writing.sendMessage({
-    content: `Create content for: ${topic}`,
-    from: 'gateway-agent'
+    message: createMessage(`Create content for: ${topic}`, 'gateway-agent')
   });
 
   return { researchResponse, analysisResponse, writingResponse };
@@ -222,9 +240,26 @@ async function executeResearchAnalysisWriteWorkflow(topic: string, targetAudienc
 ## 🔍 Key Learnings
 
 1. **Real A2A Client Access**: A2A client is accessed via `MastraClient.getA2A(agentId)`
-2. **Protocol Compliance**: Follows Google's A2A v0.3.0 specification
-3. **Distributed Benefits**: True separation, independent scaling, fault isolation
-4. **Development Approach**: Learning by implementing real A2A concepts
+2. **Agent Naming**: Use export names (`researchAgent`) not internal names (`research-agent`)
+3. **Protocol Compliance**: Follows Google's A2A v0.3.0 specification
+4. **Distributed Benefits**: True separation, independent scaling, fault isolation
+5. **Development Approach**: Learning by implementing real A2A concepts
+
+## 🚧 Current Status
+
+✅ **Fully Working Components:**
+- A2A Protocol communication between all agents
+- Agent discovery and status monitoring
+- Message exchange via A2A protocol
+- Workflow orchestration
+- Frontend integration
+- Distributed architecture
+
+✅ **Recent Fixes:**
+- Fixed agent naming convention (export names vs internal names)
+- Resolved port conflicts with environment variables
+- Updated frontend to use correct agent IDs
+- Added root package.json for development convenience
 
 ## 🚧 Future Enhancements
 
