@@ -22,6 +22,7 @@ export const mastra = new Mastra({
   storage: new LibSQLStore({
     // Mastra Cloud will automatically configure the database URL
     // This enables persistence and agent state management
+    url: process.env.DATABASE_URL || 'file:./mastra.db',
   }),
 
   // Logging Configuration - For cloud monitoring and debugging

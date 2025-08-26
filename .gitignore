@@ -106,3 +106,7 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+.vercel
+
+# Documentation with sensitive information
+DEPLOYMENT_TROUBLESHOOTING.md

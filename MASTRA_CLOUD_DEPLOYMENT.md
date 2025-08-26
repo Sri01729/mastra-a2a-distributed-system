@@ -1,6 +1,18 @@
 # Mastra Cloud Deployment Guide
 
-This guide explains how to deploy the A2A (Agent-to-Agent) system using Mastra Cloud, where each agent is deployed as a separate project.
+This guide explains how to deploy the A2A (Agent-to-Agent) system using Mastra Cloud for processing agents and Defang for the gateway, with a Next.js frontend on Vercel.
+
+> **⚠️ DEMO SYSTEM: This is a demonstration project for educational purposes only.**
+>
+> **No production security measures are implemented:**
+> - No authentication or authorization
+> - No rate limiting
+> - No input validation
+> - No API key protection
+> - No CORS restrictions (beyond basic setup)
+> - No request sanitization
+>
+> **Do not use in production without implementing proper security measures.**
 
 ## Architecture Overview
 
@@ -19,7 +31,7 @@ This guide explains how to deploy the A2A (Agent-to-Agent) system using Mastra C
                     │   Gateway       │
                     │   Agent         │
                     │                 │
-                    │ Vercel/AWS/etc  │
+                    │ Defang          │
                     └─────────────────┘
                                  │
                     ┌─────────────────┐
@@ -33,13 +45,24 @@ This guide explains how to deploy the A2A (Agent-to-Agent) system using Mastra C
 ## Prerequisites
 
 1. **Mastra Cloud Account**: Sign up at [https://cloud.mastra.ai](https://cloud.mastra.ai)
-2. **GitHub Account**: For repository integration
-3. **Mastra CLI**: Install globally with `npm install -g mastra`
-4. **Environment Variables**: API keys for your agents (OpenAI, etc.)
+2. **Defang Account**: Sign up at [https://defang.dev](https://defang.dev)
+3. **Vercel Account**: Sign up at [https://vercel.com](https://vercel.com)
+4. **GitHub Account**: For repository integration
+5. **Mastra CLI**: Install globally with `npm install -g mastra`
+6. **Defang CLI**: Install globally with `npm install -g @defang/cli`
+7. **Vercel CLI**: Install globally with `npm install -g vercel`
+8. **Environment Variables**: API keys for your agents (OpenAI, etc.)
 
 ## Deployment Steps
 
 ### Step 1: Prepare the Repository
+
+**Important: Use the correct branch for deployment**
+
+```bash
+# For production deployment, use the mastra-cloud-deployment branch
+git checkout mastra-cloud-deployment
+```
 
 The repository is already configured for Mastra Cloud deployment. Each agent has:
 - `mastra.config.ts` - Cloud-optimized configuration
@@ -93,33 +116,58 @@ After deployment, each agent will have a unique URL:
 - Writing Agent: `https://your-writing-agent.mastra.ai`
 - Analysis Agent: `https://your-analysis-agent.mastra.ai`
 
-### Step 4: Configure Gateway Agent
+### Step 4: Deploy Gateway Agent to Defang
 
-1. **Copy Environment Template**
+1. **Navigate to Gateway Directory**
    ```bash
-   cp gateway-agent/config/agents.env.example gateway-agent/.env
+   cd gateway-agent
    ```
 
-2. **Update with Real URLs**
+2. **Configure Environment Variables**
    ```bash
-   # Edit gateway-agent/.env
-   RESEARCH_AGENT_URL=https://your-research-agent.mastra.ai
-   WRITING_AGENT_URL=https://your-writing-agent.mastra.ai
-   ANALYSIS_AGENT_URL=https://your-analysis-agent.mastra.ai
+   defang config set RESEARCH_AGENT_URL=https://your-research-agent.mastra.cloud
+   defang config set WRITING_AGENT_URL=https://your-writing-agent.mastra.cloud
+   defang config set ANALYSIS_AGENT_URL=https://your-analysis-agent.mastra.cloud
+   defang config set ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
    ```
 
-3. **Deploy Gateway Agent**
-   - Deploy to Vercel, AWS, or any platform
-   - Set environment variables in your deployment platform
+3. **Deploy to Defang**
+   ```bash
+   defang compose up
+   ```
 
-### Step 5: Deploy Frontend
+4. **Get Gateway URL**
+   - After deployment, note your Defang gateway URL
+   - It will look like: `https://your-gateway--3001.prod1a.defang.dev`
 
-The frontend can be deployed to Vercel as before:
-```bash
-cd a2a-frontend
-npm run build
-# Deploy to Vercel
-```
+### Step 5: Deploy Frontend to Vercel
+
+1. **Navigate to Frontend Directory**
+   ```bash
+   cd a2a-frontend
+   ```
+
+2. **Deploy to Vercel**
+   ```bash
+   vercel --prod
+   ```
+
+3. **Configure Environment Variables**
+   In your Vercel dashboard, set these environment variables:
+   ```
+   GATEWAY_URL=https://your-gateway--3001.prod1a.defang.dev
+   RESEARCH_AGENT_URL=https://your-research-agent.mastra.cloud
+   WRITING_AGENT_URL=https://your-writing-agent.mastra.cloud
+   ANALYSIS_AGENT_URL=https://your-analysis-agent.mastra.cloud
+   ```
+
+4. **Update CORS Configuration**
+   After getting your Vercel frontend URL, update the gateway's CORS settings:
+   ```bash
+   cd ../gateway-agent
+   defang config set ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001,https://your-frontend-domain.vercel.app"
+   defang compose up
+   ```
 
 ## Testing Your Deployment
 
@@ -133,14 +181,17 @@ Use Mastra Cloud Playground for each agent:
 ### 2. Test Gateway Agent
 
 ```bash
+# Test gateway health
+curl https://your-gateway--3001.prod1a.defang.dev/health
+
 # Test agent discovery
-curl https://your-gateway-agent.vercel.app/api/agents
+curl https://your-gateway--3001.prod1a.defang.dev/api/agents
 
 # Test A2A communication
-curl -X POST https://your-gateway-agent.vercel.app/api/test/a2a-communication
+curl -X POST https://your-gateway--3001.prod1a.defang.dev/api/test/a2a-communication
 
 # Test workflow
-curl -X POST https://your-gateway-agent.vercel.app/api/workflow/simple \
+curl -X POST https://your-gateway--3001.prod1a.defang.dev/api/workflow/simple \
   -H "Content-Type: application/json" \
   -d '{"topic": "AI in healthcare", "targetAudience": "medical professionals"}'
 ```
@@ -164,10 +215,11 @@ Each agent project provides:
 
 ### Gateway Agent Monitoring
 
-Monitor the gateway agent through your deployment platform:
-- Vercel: Built-in analytics and logs
-- AWS: CloudWatch logs and metrics
-- Other platforms: Use their monitoring tools
+Monitor the gateway agent through Defang:
+- **Defang Dashboard**: View logs, metrics, and deployment status
+- **Health Checks**: Built-in health monitoring
+- **Logs**: Real-time application logs
+- **Deployments**: Build and deployment history
 
 ## Troubleshooting
 
@@ -192,13 +244,13 @@ Monitor the gateway agent through your deployment platform:
 
 ```bash
 # Test agent connectivity
-curl https://your-research-agent.mastra.ai/api/agents
+curl https://your-research-agent.mastra.cloud/api/agents
 
 # Check gateway health
-curl https://your-gateway-agent.vercel.app/health
+curl https://your-gateway--3001.prod1a.defang.dev/health
 
 # Test individual agent
-curl -X POST https://your-research-agent.mastra.ai/api/agents/researchAgent/generate \
+curl -X POST https://your-research-agent.mastra.cloud/api/agents/researchAgent/generate \
   -H "Content-Type: application/json" \
   -d '{"messages": [{"role": "user", "content": "Hello"}]}'
 ```

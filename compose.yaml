@@ -7,47 +7,13 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      RESEARCH_AGENT_URL: http://research:4111
-      WRITING_AGENT_URL: http://writing:4112
-      ANALYSIS_AGENT_URL: http://analysis:4113
+      RESEARCH_AGENT_URL: ${RESEARCH_AGENT_URL}
+      WRITING_AGENT_URL: ${WRITING_AGENT_URL}
+      ANALYSIS_AGENT_URL: ${ANALYSIS_AGENT_URL}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
     healthcheck:
-      interval: 60s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-
-  research:
-    build:
-      context: ./research-agent
-    environment:
-      NODE_ENV: production
-      PORT: 4111
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    healthcheck:
-      interval: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 10s
       timeout: 5s
       retries: 3
-
-  writing:
-    build:
-      context: ./writing-agent
-    environment:
-      NODE_ENV: production
-      PORT: 4112
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    healthcheck:
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  analysis:
-    build:
-      context: ./analysis-agent
-    environment:
-      NODE_ENV: production
-      PORT: 4113
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    healthcheck:
-      interval: 30s
-      timeout: 5s
-      retries: 3
+      start_period: 30s

@@ -79,20 +79,35 @@ class GatewayAgent {
   }
 
   private setupMiddleware() {
-    this.app.use(cors());
+    // Parse allowed origins from environment variable
+    const allowedOrigins = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
+      : ['http://localhost:3000', 'http://localhost:3001'];
+
+    this.app.use(cors({
+      origin: allowedOrigins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization']
+    }));
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: true }));
   }
 
   private setupRoutes() {
+    // Simple, fast response for load balancer health checks
     this.app.get('/health', (req: express.Request, res: express.Response) => {
+      res.status(200).json({ status: 'healthy' });
+    });
+
+    // Add readiness probe separate from health check
+    this.app.get('/ready', (req: express.Request, res: express.Response) => {
       res.json({
-        status: 'healthy',
+        status: 'ready',
         service: 'Gateway Agent',
         timestamp: new Date().toISOString(),
         agents: Object.keys(AGENT_SERVERS),
-        a2aProtocol: 'Mastra Native A2A v0.3.0',
-        changelog: 'https://mastra.ai/blog/changelog-2025-05-15'
+        a2aProtocol: 'Mastra Native A2A v0.3.0'
       });
     });
 

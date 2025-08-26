@@ -1,10 +1,25 @@
 # Deployment Quick Reference
 
+> **⚠️ DEMO SYSTEM: This is a demonstration project for educational purposes only.**
+>
+> **No production security measures are implemented:**
+> - No authentication or authorization
+> - No rate limiting
+> - No input validation
+> - No API key protection
+> - No CORS restrictions (beyond basic setup)
+> - No request sanitization
+>
+> **Do not use in production without implementing proper security measures.**
+
 ## 🚀 Quick Start
 
 ### 1. Deploy Agents to Mastra Cloud
 
 ```bash
+# Ensure you're on the production branch
+git checkout mastra-cloud-deployment
+
 # Run the deployment script
 ./scripts/deploy-all-agents-mastra-cloud.sh
 ```
@@ -31,17 +46,31 @@ WRITING_AGENT_URL=https://your-writing-agent.mastra.ai
 ANALYSIS_AGENT_URL=https://your-analysis-agent.mastra.ai
 ```
 
-### 4. Deploy Gateway & Frontend
+### 4. Deploy Gateway to Defang
 
 ```bash
-# Deploy gateway to Vercel/AWS
 cd gateway-agent
-# Deploy to your preferred platform
+defang config set RESEARCH_AGENT_URL=https://your-research-agent.mastra.cloud
+defang config set WRITING_AGENT_URL=https://your-writing-agent.mastra.cloud
+defang config set ANALYSIS_AGENT_URL=https://your-analysis-agent.mastra.cloud
+defang config set ALLOWED_ORIGINS=http://localhost:3000,http://localhost:3001
+defang compose up
+```
 
-# Deploy frontend to Vercel
+### 5. Deploy Frontend to Vercel
+
+```bash
 cd a2a-frontend
-npm run build
-# Deploy to Vercel
+vercel --prod
+# Set environment variables in Vercel dashboard
+```
+
+### 6. Update CORS Configuration
+
+```bash
+cd gateway-agent
+defang config set ALLOWED_ORIGINS="http://localhost:3000,http://localhost:3001,https://your-frontend-domain.vercel.app"
+defang compose up
 ```
 
 ## 🔧 Environment Variables
@@ -49,7 +78,14 @@ npm run build
 ### Required for Each Agent Project
 - `OPENAI_API_KEY`
 
-### Required for Gateway Agent
+### Required for Gateway Agent (Defang)
+- `RESEARCH_AGENT_URL`
+- `WRITING_AGENT_URL`
+- `ANALYSIS_AGENT_URL`
+- `ALLOWED_ORIGINS`
+
+### Required for Frontend (Vercel)
+- `GATEWAY_URL`
 - `RESEARCH_AGENT_URL`
 - `WRITING_AGENT_URL`
 - `ANALYSIS_AGENT_URL`
@@ -59,15 +95,15 @@ npm run build
 ### Test Individual Agents
 ```bash
 # Test research agent
-curl https://your-research-agent.mastra.ai/api/agents
+curl https://your-research-agent.mastra.cloud/api/agents
 
 # Test gateway
-curl https://your-gateway-agent.vercel.app/health
+curl https://your-gateway--3001.prod1a.defang.dev/health
 ```
 
 ### Test Complete Workflow
 ```bash
-curl -X POST https://your-gateway-agent.vercel.app/api/workflow/simple \
+curl -X POST https://your-gateway--3001.prod1a.defang.dev/api/workflow/simple \
   -H "Content-Type: application/json" \
   -d '{"topic": "AI in healthcare", "targetAudience": "medical professionals"}'
 ```
@@ -75,7 +111,7 @@ curl -X POST https://your-gateway-agent.vercel.app/api/workflow/simple \
 ## 📊 Monitoring
 
 - **Mastra Cloud**: Each agent project dashboard
-- **Gateway**: Your deployment platform logs
+- **Gateway**: Defang dashboard logs and metrics
 - **Frontend**: Vercel analytics
 
 ## 🆘 Troubleshooting

@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: gateway-agent
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: node dist/gateway-agent.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: RESEARCH_AGENT_URL
+        value: https://your-research-agent.mastra.cloud
+      - key: WRITING_AGENT_URL
+        value: https://your-writing-agent.mastra.cloud
+      - key: ANALYSIS_AGENT_URL
+        value: https://your-analysis-agent.mastra.cloud
